@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, Alert, Dimensions, TextInput, Modal, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, Alert, Dimensions, TextInput, Modal, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -11,49 +11,49 @@ export default function ElephantMap() {
   
   // State for the Registration Modal
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  
+  // Form Inputs (Phone Number Removed)
   const [username, setUsername] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     checkUserStatus();
   }, []);
 
   const checkUserStatus = async () => {
-    // Check if this user is already registered on this phone
     const token = await AsyncStorage.getItem('userToken');
     if (token) {
       setIsRegistered(true);
     }
   };
 
-  // 1. This function runs when the user clicks "Register" in the modal
   const handleRegister = async () => {
-    if (!username || !phoneNumber) {
+    // 1. Validate fields (No phone check)
+    if (!username || !email || !password) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
     try {
-      // 🟢 BACKEND CONNECTION HERE: REGISTER USER
-      // Replace with your real backend URL
+      // 🟢 BACKEND CONNECTION
       const response = await fetch('https://your-backend-api.com/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           username: username,
-          phone: phoneNumber,
-          // Add other fields your backend needs (e.g., device ID)
+          email: email,
+          password: password,
         }), 
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Save the token so they don't have to register again
         await AsyncStorage.setItem('userToken', data.token || 'dummy-token');
         setIsRegistered(true);
-        setShowRegisterModal(false); // Close the popup
-        Alert.alert("Welcome!", "You are now registered. You can pin locations.");
+        setShowRegisterModal(false);
+        Alert.alert("Welcome!", "You are now registered.");
       } else {
         Alert.alert("Registration Failed", data.message || "Please try again.");
       }
@@ -63,7 +63,6 @@ export default function ElephantMap() {
   };
 
   const handleLongPress = (e: any) => {
-    // A. IF NOT REGISTERED -> Open Registration Popup
     if (!isRegistered) {
       Alert.alert(
         "Registration Required",
@@ -76,7 +75,6 @@ export default function ElephantMap() {
       return;
     }
 
-    // B. IF REGISTERED -> Add Pin
     const coordinate = e.nativeEvent.coordinate;
     const newPin = {
       id: Date.now(),
@@ -86,9 +84,6 @@ export default function ElephantMap() {
     };
 
     setMarkers([...markers, newPin]);
-
-    // 🟢 BACKEND CONNECTION HERE: SEND LOCATION
-    // (This part stays the same as before)
     savePinToBackend(newPin);
   };
 
@@ -134,24 +129,40 @@ export default function ElephantMap() {
         <Text style={styles.infoText}>Long Press to pin an elephant 🐘</Text>
       </View>
 
-      {/* --- SIMPLE REGISTRATION MODAL --- */}
+      {/* --- REGISTRATION MODAL --- */}
       <Modal visible={showRegisterModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>One-Time Registration</Text>
+            <Text style={styles.modalTitle}>Create Account</Text>
             
+            {/* Username Input */}
             <TextInput 
               placeholder="Your Name" 
               style={styles.input} 
               value={username}
               onChangeText={setUsername}
             />
+            
+            {/* Email Input */}
             <TextInput 
-              placeholder="Phone Number" 
-              keyboardType="phone-pad"
+              placeholder="Email Address" 
+              keyboardType="email-address"
+              autoCapitalize="none"
               style={styles.input} 
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
+              value={email}
+              onChangeText={setEmail}
+            />
+
+            {/* Password Input */}
+            <TextInput 
+              placeholder="Password" 
+              secureTextEntry={true}
+              style={styles.input} 
+              value={password}
+              onChangeText={setPassword}
             />
 
             <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
@@ -162,7 +173,7 @@ export default function ElephantMap() {
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
     </View>
@@ -180,10 +191,10 @@ const styles = StyleSheet.create({
   
   // Modal Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { width: '80%', backgroundColor: 'white', padding: 20, borderRadius: 15, alignItems: 'center' },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
-  input: { width: '100%', height: 50, borderColor: '#ddd', borderWidth: 1, borderRadius: 10, paddingHorizontal: 15, marginBottom: 15 },
+  modalContent: { width: '85%', backgroundColor: 'white', padding: 25, borderRadius: 15, alignItems: 'center', elevation: 5 },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, color: '#333' },
+  input: { width: '100%', height: 50, borderColor: '#ddd', borderWidth: 1, borderRadius: 10, paddingHorizontal: 15, marginBottom: 15, backgroundColor: '#FAFAFA' },
   registerButton: { width: '100%', backgroundColor: '#F97316', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 15 },
-  registerButtonText: { color: 'white', fontWeight: 'bold' },
-  cancelText: { color: '#666' }
+  registerButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
+  cancelText: { color: '#666', marginTop: 5 }
 });

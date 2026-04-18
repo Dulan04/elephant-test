@@ -1,21 +1,17 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Platform } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-// Define the structure of a navigation item
 type NavItem = {
   id: string;
   label: string;
   iconName: keyof typeof Ionicons.glyphMap;
 };
 
-// Define the props the component accepts
 interface BottomNavProps {
   activeTab: string;
   onTabPress: (id: string) => void;
 }
-
-const { width } = Dimensions.get('window');
 
 const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabPress }) => {
   
@@ -29,54 +25,71 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabPress }) => {
 
   return (
     <View style={styles.container}>
-      {navItems.map((item) => {
-        const isActive = activeTab === item.id;
-        
-        // Auto-switch icon: "home-outline" becomes "home" when active
-        const iconName = isActive 
-          ? (item.iconName.replace('-outline', '') as keyof typeof Ionicons.glyphMap)
-          : item.iconName;
+      <View style={styles.backgroundCurve}>
+        {navItems.map((item) => {
+          const isActive = activeTab === item.id;
+          
+          // Auto-switch icon: "home-outline" becomes "home" when active
+          const iconName = isActive 
+            ? (item.iconName.replace('-outline', '') as keyof typeof Ionicons.glyphMap)
+            : item.iconName;
 
-        return (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.tabItem}
-            onPress={() => onTabPress(item.id)}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={iconName}
-              size={24}
-              color={isActive ? '#F97316' : '#9CA3AF'} // Orange for active, Gray for inactive
-            />
-            <Text style={[styles.label, isActive && styles.activeLabel]}>
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+          return (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.tabItem}
+              onPress={() => onTabPress(item.id)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={iconName}
+                size={24}
+                color={isActive ? '#F97316' : '#9CA3AF'}
+              />
+              <Text style={[styles.label, isActive && styles.activeLabel]}>
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    position: 'absolute',
+    // 1. Lifts the bar up from the bottom
+    bottom: 0,
+    // 2. Adds space from the sides (Floating effect)
+    left: 0,
+    right: 0,
+
+  
+    
+    elevation: 0, 
+  },
+  backgroundCurve: {
+    backgroundColor: 'white',
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: 'white',
-    height: 80, // Height of the navbar
-    paddingBottom: 20, // Padding for bottom of screen (iPhone home bar)
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    position: 'absolute',
-    bottom: 0,
-    width: width,
+    
+    // 3. Round ALL corners so it looks like a pill
+    borderRadius:40, 
+    
+    paddingVertical: 50,
+    // Note: We removed the extra conditional iOS padding because 
+    // the bar is now floating above the home indicator area.
+    paddingTop: 15,    // Reduced "up size" (was 25)
+    // Kept the bottom size large
+    // Shadows
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 5, // Shadow for Android
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 10,
   },
   tabItem: {
     alignItems: 'center',

@@ -47,11 +47,14 @@ export default function HomeScreen() {
         {renderContent()}
       </View>
 
-      {/* 2. Bottom Navigation */}
-      <BottomNav 
-        activeTab={currentTab} 
-        onTabPress={(id) => setCurrentTab(id)} 
-      />
+      {/* 2. Bottom Navigation Wrapper */}
+      {/* Added this wrapper to lift the nav bar up */}
+      <View style={styles.navContainer}>
+        <BottomNav 
+          activeTab={currentTab} 
+          onTabPress={(id) => setCurrentTab(id)} 
+        />
+      </View>
       
     </SafeAreaView>
   );
@@ -66,6 +69,13 @@ const styles = StyleSheet.create({
     flex: 1,
     // We remove padding here so the Map can go edge-to-edge
   },
+  // --- NEW STYLE ---
+  navContainer: {
+    paddingBottom: 20, // <--- Change this number to move it higher or lower
+    paddingHorizontal: 10, // Optional: Adds a little space on sides for a "floating" look
+    backgroundColor: 'transparent', 
+  },
+  // -----------------
   scrollContent: {
     paddingBottom: 100,
     paddingTop: 20,

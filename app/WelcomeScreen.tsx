@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BACKGROUND_IMAGE = require('@/assets/images/elephant_bg.png');
+const BACKGROUND_IMAGE = require('@/assets/elephant_bg.png');
 
 export default function WelcomeScreen() {
   const router = useRouter();
