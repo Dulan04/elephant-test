@@ -2,6 +2,7 @@
   "expo": {
     "name": "Elephant",
     "slug": "my-app-01",
+    "scheme": "elephantguard",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -26,6 +27,16 @@
       "eas": {
         "projectId": "ac5a8687-5e60-41c2-964a-c68e8aca01de"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#DC2626",
+          "sounds": ["./assets/alert.wav"]
+        }
+      ]
+    ]
   }
 }

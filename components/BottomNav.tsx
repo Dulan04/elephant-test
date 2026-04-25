@@ -18,7 +18,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabPress }) => {
   const navItems: NavItem[] = [
     { id: 'Home', label: 'Home', iconName: 'home-outline' },
     { id: 'Map', label: 'Map', iconName: 'location-outline' },
-    { id: 'Chat', label: 'Chat', iconName: 'chatbox-ellipses-outline' },
+    { id: 'Chat', label: 'News', iconName: 'newspaper-outline'},
     { id: 'Resources', label: 'Resources', iconName: 'book-outline' },
     { id: 'Profile', label: 'Profile', iconName: 'person-outline' },
   ];

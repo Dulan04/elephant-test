@@ -1,105 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, Alert, Dimensions, TextInput, Modal, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { StyleSheet, View, Alert, TouchableOpacity, Text } from 'react-native';
+// Note the corrected import here: LongPressEvent instead of MapPressEvent
+import MapView, { Marker, LongPressEvent } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ENDPOINTS } from '@/constants/api';
 
-const { width } = Dimensions.get('window');
+type Sighting = {
+  id?: string;
+  latitude: number;
+  longitude: number;
+  reportedBy: string;
+};
 
 export default function ElephantMap() {
-  const [markers, setMarkers] = useState<any[]>([]);
-  const [isRegistered, setIsRegistered] = useState(false);
-  
-  // State for the Registration Modal
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
-  
-  // Form Inputs (Phone Number Removed)
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [markers, setMarkers] = useState<Sighting[]>([]);
+  const [tempMarker, setTempMarker] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [username, setUsername] = useState<string>('Anonymous');
 
   useEffect(() => {
-    checkUserStatus();
+    const loadUserData = async () => {
+      const storedName = await AsyncStorage.getItem('username');
+      if (storedName) setUsername(storedName);
+    };
+    
+    loadUserData();
+    fetchSightings();
   }, []);
 
-  const checkUserStatus = async () => {
-    const token = await AsyncStorage.getItem('userToken');
-    if (token) {
-      setIsRegistered(true);
-    }
-  };
-
-  const handleRegister = async () => {
-    // 1. Validate fields (No phone check)
-    if (!username || !email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
-      return;
-    }
-
+  const fetchSightings = async () => {
     try {
-      // 🟢 BACKEND CONNECTION
-      const response = await fetch('https://your-backend-api.com/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          username: username,
-          email: email,
-          password: password,
-        }), 
-      });
-
+      const response = await fetch(ENDPOINTS.SIGHTINGS);
       const data = await response.json();
-
       if (response.ok) {
-        await AsyncStorage.setItem('userToken', data.token || 'dummy-token');
-        setIsRegistered(true);
-        setShowRegisterModal(false);
-        Alert.alert("Welcome!", "You are now registered.");
-      } else {
-        Alert.alert("Registration Failed", data.message || "Please try again.");
+        setMarkers(data);
       }
     } catch (error) {
-      Alert.alert("Error", "Could not connect to server");
+      console.log("Could not load map pins:", error);
     }
   };
 
-  const handleLongPress = (e: any) => {
-    if (!isRegistered) {
-      Alert.alert(
-        "Registration Required",
-        "To protect the community, you must register once before posting alerts.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Register Now", onPress: () => setShowRegisterModal(true) }
-        ]
-      );
-      return;
-    }
+  // Note the corrected event type here
+  const handleMapLongPress = (event: LongPressEvent) => {
+    const { coordinate } = event.nativeEvent;
+    setTempMarker(coordinate); 
+  };
 
-    const coordinate = e.nativeEvent.coordinate;
-    const newPin = {
-      id: Date.now(),
-      latitude: coordinate.latitude,
-      longitude: coordinate.longitude,
-      title: 'Elephant Sighting',
+  const saveSighting = async () => {
+    if (!tempMarker) return;
+
+    const newSighting: Sighting = {
+      latitude: tempMarker.latitude,
+      longitude: tempMarker.longitude,
+      reportedBy: username,
     };
 
-    setMarkers([...markers, newPin]);
-    savePinToBackend(newPin);
-  };
-
-  const savePinToBackend = async (pin: any) => {
     try {
-      const token = await AsyncStorage.getItem('userToken');
-      await fetch('https://your-backend-api.com/sightings', {
+      const response = await fetch(ENDPOINTS.SIGHTINGS, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(pin),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSighting),
       });
+
+      if (response.ok) {
+        const savedData = await response.json();
+        setMarkers((current) => [...current, savedData]); 
+        setTempMarker(null); 
+        Alert.alert("Success", "Elephant sighting reported!");
+      }
     } catch (error) {
-      console.log("Error saving pin", error);
+      Alert.alert("Error", "Could not save sighting to server.");
     }
   };
 
@@ -107,94 +76,75 @@ export default function ElephantMap() {
     <View style={styles.container}>
       <MapView
         style={styles.map}
-        provider={PROVIDER_GOOGLE}
         initialRegion={{
-          latitude: 7.8731,
+          latitude: 7.8731, 
           longitude: 80.7718,
           latitudeDelta: 2.5,
           longitudeDelta: 2.5,
         }}
-        onLongPress={handleLongPress}
+        onLongPress={handleMapLongPress} 
       >
-        {markers.map((marker) => (
+        {markers.map((marker, index) => (
           <Marker
-            key={marker.id}
+            key={marker.id || index}
             coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
+            title="🐘 Elephant Sighted"
+            description={`Reported by ${marker.reportedBy}`}
             pinColor="orange"
           />
         ))}
+
+        {tempMarker && (
+          <Marker
+            coordinate={tempMarker}
+            title="New Sighting Here?"
+            pinColor="blue"
+          />
+        )}
       </MapView>
 
-      <View style={styles.infoBox}>
-        <Text style={styles.infoText}>Long Press to pin an elephant 🐘</Text>
-      </View>
-
-      {/* --- REGISTRATION MODAL --- */}
-      <Modal visible={showRegisterModal} transparent animationType="slide">
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modalOverlay}
-        >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create Account</Text>
-            
-            {/* Username Input */}
-            <TextInput 
-              placeholder="Your Name" 
-              style={styles.input} 
-              value={username}
-              onChangeText={setUsername}
-            />
-            
-            {/* Email Input */}
-            <TextInput 
-              placeholder="Email Address" 
-              keyboardType="email-address"
-              autoCapitalize="none"
-              style={styles.input} 
-              value={email}
-              onChangeText={setEmail}
-            />
-
-            {/* Password Input */}
-            <TextInput 
-              placeholder="Password" 
-              secureTextEntry={true}
-              style={styles.input} 
-              value={password}
-              onChangeText={setPassword}
-            />
-
-            <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-              <Text style={styles.registerButtonText}>Register</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => setShowRegisterModal(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-
+      {tempMarker && (
+        <View style={styles.confirmContainer}>
+          <TouchableOpacity style={styles.confirmBtn} onPress={saveSighting}>
+            <Text style={styles.confirmText}>Confirm Sighting Here</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.cancelBtn} onPress={() => setTempMarker(null)}>
+            <Text style={styles.cancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  map: { width: width, height: '100%' },
-  infoBox: {
-    position: 'absolute', top: 50, backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: 10, borderRadius: 20, elevation: 3,
+  container: { flex: 1 },
+  map: { width: '100%', height: '100%' },
+  confirmContainer: {
+    position: 'absolute',
+    bottom: 100, 
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  infoText: { fontWeight: '600', color: '#333' },
-  
-  // Modal Styles
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { width: '85%', backgroundColor: 'white', padding: 25, borderRadius: 15, alignItems: 'center', elevation: 5 },
-  modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, color: '#333' },
-  input: { width: '100%', height: 50, borderColor: '#ddd', borderWidth: 1, borderRadius: 10, paddingHorizontal: 15, marginBottom: 15, backgroundColor: '#FAFAFA' },
-  registerButton: { width: '100%', backgroundColor: '#F97316', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 15 },
-  registerButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
-  cancelText: { color: '#666', marginTop: 5 }
+  confirmBtn: {
+    flex: 1,
+    backgroundColor: '#F97316',
+    padding: 15,
+    borderRadius: 30,
+    marginRight: 10,
+    alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5,
+  },
+  confirmText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
+  cancelBtn: {
+    flex: 0.5,
+    backgroundColor: '#FFF',
+    padding: 15,
+    borderRadius: 30,
+    alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5,
+  },
+  cancelText: { color: '#333', fontWeight: 'bold', fontSize: 16 }
 });
