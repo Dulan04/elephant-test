@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Alert, TouchableOpacity, Text } from 'react-native';
-// Note the corrected import here: LongPressEvent instead of MapPressEvent
 import MapView, { Marker, LongPressEvent } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENDPOINTS } from '@/constants/api';
@@ -24,22 +23,33 @@ export default function ElephantMap() {
     };
     
     loadUserData();
+    
+    // 1. Fetch immediately when the map opens
     fetchSightings();
+
+    // 2. REAL-TIME FIX: Check the server for new pins every 5 seconds
+    const refreshInterval = setInterval(() => {
+      fetchSightings();
+    }, 5000);
+
+    // 3. Clean up the timer if the user navigates away from the map
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const fetchSightings = async () => {
     try {
       const response = await fetch(ENDPOINTS.SIGHTINGS);
-      const data = await response.json();
       if (response.ok) {
-        setMarkers(data);
+        const data = await response.json();
+        // React Native Maps is smart enough to only re-draw new markers, 
+        // so this won't cause the screen to flash or stutter.
+        setMarkers(data); 
       }
     } catch (error) {
       console.log("Could not load map pins:", error);
     }
   };
 
-  // Note the corrected event type here
   const handleMapLongPress = (event: LongPressEvent) => {
     const { coordinate } = event.nativeEvent;
     setTempMarker(coordinate); 
@@ -62,10 +72,10 @@ export default function ElephantMap() {
       });
 
       if (response.ok) {
-        const savedData = await response.json();
-        setMarkers((current) => [...current, savedData]); 
         setTempMarker(null); 
         Alert.alert("Success", "Elephant sighting reported!");
+        // Instantly fetch the updated list from the server to ensure consistency
+        fetchSightings(); 
       }
     } catch (error) {
       Alert.alert("Error", "Could not save sighting to server.");

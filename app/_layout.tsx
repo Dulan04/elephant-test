@@ -7,6 +7,7 @@ import * as Device from 'expo-device';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import ElephantAlert from '../components/ElephantAlert';
+import { BASE_URL } from '../constants/api';
 
 // FIX 1: Added shouldShowBanner and shouldShowList for SDK 53
 Notifications.setNotificationHandler({
@@ -90,7 +91,7 @@ export default function RootLayout() {
       // Save token to Spring Boot Database
       if (username) {
         try {
-          await fetch(`http://192.168.255.231:8080/api/users/${username}/token`, {
+          await fetch(`${BASE_URL}/users/${username}/token`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: token })

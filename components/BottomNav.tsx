@@ -79,10 +79,12 @@ const styles = StyleSheet.create({
     // 3. Round ALL corners so it looks like a pill
     borderRadius:40, 
     
-    paddingVertical: 50,
+    paddingVertical: 40,
     // Note: We removed the extra conditional iOS padding because 
     // the bar is now floating above the home indicator area.
-    paddingTop: 15,    // Reduced "up size" (was 25)
+    paddingTop: 10, 
+   
+       // Reduced "up size" (was 25)
     // Kept the bottom size large
     // Shadows
     shadowColor: '#000',
