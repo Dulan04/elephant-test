@@ -1,5 +1,5 @@
 // constants/api.js
-export const BASE_URL = 'http://192.168.208.231:8080/api'; // Change this to your Render/local URL
+export const BASE_URL = 'http://10.48.36.212:8080/api'; // Change this to your Render/local URL
 
 export const ENDPOINTS = {
   LOGIN: `${BASE_URL}/auth/login`,

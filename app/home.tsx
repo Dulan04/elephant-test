@@ -2,13 +2,20 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router'; 
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useState, useEffect } from 'react';
 
 import BottomNav from '@/components/BottomNav';
 import ElephantMap from '@/components/ElephantMap';
 
 export default function HomeScreen() {
   const [currentTab, setCurrentTab] = useState('Home');
-  const router = useRouter(); 
+  const router = useRouter();
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
+
+  useEffect(() => {
+    if (tab) setCurrentTab(tab);
+  }, [tab]);
 
   const handleTabPress = (id: string) => {
     if (id === 'Profile') {

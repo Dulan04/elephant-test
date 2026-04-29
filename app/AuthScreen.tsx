@@ -70,7 +70,7 @@ export default function AuthScreen() {
 
         await AsyncStorage.setItem('userToken', String(tokenToSave));
         await AsyncStorage.setItem('username', String(usernameToSave));
-        router.replace('/home' as any);
+        router.replace('/HomeScreen' as any);
       } else {
          Alert.alert("Google Login Failed", data.message || "Something went wrong");
       }
@@ -138,7 +138,7 @@ export default function AuthScreen() {
           await AsyncStorage.setItem('userToken', String(tokenToSave));
           await AsyncStorage.setItem('username', String(usernameToSave));
           
-          router.replace('/home' as any);
+          router.replace('/HomeScreen' as any);
         } else {
           Alert.alert("Success", "Account created! Please log in.");
           setIsLogin(true);
