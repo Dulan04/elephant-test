@@ -110,6 +110,12 @@ export default function RootLayout() {
         <Stack.Screen name="WelcomeScreen" />
         <Stack.Screen name="home" />
         <Stack.Screen name="HomeScreen" />
+        <Stack.Screen name="HomeScreen" />
+        <Stack.Screen name="NewsDetail" />
+        <Stack.Screen name="tips/SpaceTip" />
+        <Stack.Screen name="tips/PhotoTip" />
+        <Stack.Screen name="tips/VehicleTip" />
+        <Stack.Screen name="tips/NightTip" />
       </Stack>
       <StatusBar style="dark" />
       <ElephantAlert isVisible={showAlert} onClose={() => setShowAlert(false)} />
